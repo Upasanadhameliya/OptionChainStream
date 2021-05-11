@@ -13,9 +13,9 @@ import pandas as pd
 from optionchain_stream.redis_instrument import InstrumentDumpFetch
 
 class InstrumentMaster:
-    def __init__(self, api_key):
+    def __init__(self, api_key,kite_obj=None):
         self.fno_file = 'https://archives.nseindia.com/content/fo/fo_mktlots.csv'
-        self.kite = KiteConnect(api_key=api_key)
+        self.kite = KiteConnect(api_key=api_key) if kite_obj is None else kite_obj
         self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
         self.redis_db = InstrumentDumpFetch()
 

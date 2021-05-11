@@ -82,6 +82,7 @@ class WebsocketClient(object):
             self.instrumentClass.store_option_data(contract_detail['symbol'], tick['instrument_token'], optionData)
 
     def on_connect(self, ws, response):
+        # self.token_list = InstrumentMaster("",self.kite).fetch_contract(self.symbol, str(self.expiry))
         ws.subscribe(self.token_list)
         ws.set_mode(ws.MODE_FULL, self.token_list)
         logging.debug("on_connect")
@@ -99,8 +100,13 @@ class WebsocketClient(object):
     def on_reconnect(self, ws, attempt_count):
         logging.debug("Reconnecting the websocket: {}".format(attempt_count))
     
-    def assign_callBacks(self):
+    def assign_callBacks(self,api_key):
         # Assign all the callbacks
+        self.instrumentClass = InstrumentMaster(api_key)
+        # self.instrumentClass = instrument_class
+        self.token_list = self.instrumentClass.fetch_contract(self.symbol, str(self.expiry))
+        logging.debug(self.token_list)
+
         logging.debug("Assigning start")
         self.kws.on_ticks = self.on_ticks
         self.kws.on_connect = self.on_connect
@@ -120,8 +126,9 @@ class WebsocketClient(object):
         Wrapper around ticker callbacks with multiprocess Queue
         """
         # Process to keep updating real time tick to DB
-        Process(target=self.new_fun,args=(api_key,api_secret, access_token, 
-            symbol, expiry,)).start()
+        # Process(target=self.new_fun,args=(api_key,api_secret, access_token, 
+            # symbol, expiry,)).start()
+        Process(target=self.assign_callBacks,args=(api_key,)).start()
         # self.assign_callBacks()
         # Delay to let intial instrument DB sync
         # For option chain to fetch value
