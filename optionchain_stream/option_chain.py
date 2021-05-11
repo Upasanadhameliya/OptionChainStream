@@ -33,5 +33,5 @@ class OptionChain():
         self.socketClient.queue_callBacks(self.api_key, self.api_secret, self.access_token, 
             self.symbol, self.expiry,)
         # Keep fetching streaming Queue
-        # while 1:
-            # yield self.socketClient.q.get()
+        while 1:
+            yield self.socketClient.q.get()

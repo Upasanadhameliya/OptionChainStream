@@ -8,7 +8,7 @@ if __name__ == "__main__":
 	# OptionStream.sync_instruments() #51091) "24275970"
 
 	StreamData = OptionStream.create_option_chain() #51213)
-	# for data in StreamData:
-	# 	print(data)
+	for data in StreamData:
+		print(data)
 
 	print("Imported!")

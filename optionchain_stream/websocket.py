@@ -13,19 +13,6 @@ from optionchain_stream.instrument_file import InstrumentMaster
 from optionchain_stream.implied_vol import implied_volatility
 import datetime
 
-def assign_callBacks(*args):
-    # Assign all the callbacks
-    print("Assigning start")
-    # websocket_obj.kws.on_ticks = websocket_obj.on_ticks
-    # websocket_obj.kws.on_connect = websocket_obj.on_connect
-    # websocket_obj.kws.on_close = websocket_obj.on_close
-    # websocket_obj.kws.on_error = websocket_obj.on_error
-    # websocket_obj.kws.on_noreconnect = websocket_obj.on_noreconnect
-    # websocket_obj.kws.on_reconnect = websocket_obj.on_reconnect
-    # logging.debug("kws.connect()")
-    # websocket_obj.kws.connect()
-
-
 class WebsocketClient(object):
     def __init__(self, api_key, api_secret, access_token, symbol, expiry):
         # Create kite connect instance
@@ -44,10 +31,12 @@ class WebsocketClient(object):
         # Set access_token for Quote API call
         self.kite.set_access_token(access_token)
 
-    def form_option_chain(self, q):
+    def form_option_chain(self, q,api_key):
         """
         Wrapper method around fetch and create option chain
         """
+        self.instrumentClass = InstrumentMaster(api_key)
+        self.token_list = self.instrumentClass.fetch_contract(self.symbol, str(self.expiry))
         while 1:
             complete_option_data = self.instrumentClass.generate_optionChain(self.token_list)
             # Store queue data 
@@ -129,10 +118,10 @@ class WebsocketClient(object):
         # Process(target=self.new_fun,args=(api_key,api_secret, access_token, 
             # symbol, expiry,)).start()
         Process(target=self.assign_callBacks,args=(api_key,)).start()
-        # self.assign_callBacks()
+
         # Delay to let intial instrument DB sync
         # For option chain to fetch value
         # Required only during initial run
-        # time.sleep(2)
+        time.sleep(2)
         # Process to fetch option chain in real time from Redis
-        # Process(target=self.form_option_chain,args=(self.q, )).start()
+        Process(target=self.form_option_chain,args=(self.q, api_key)).start()
