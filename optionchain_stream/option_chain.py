@@ -28,9 +28,10 @@ class OptionChain():
         Wrapper method to fetch sreaming option chain for requested symbol/expiry
         """
         self.socketClient = WebsocketClient(self.api_key, self.api_secret, self.access_token, 
-            self.symbol, self.expiry, self.instrumentClass)
+            self.symbol, self.expiry,)
         # create streaming websocket data
-        self.socketClient.queue_callBacks()
+        self.socketClient.queue_callBacks(self.api_key, self.api_secret, self.access_token, 
+            self.symbol, self.expiry,)
         # Keep fetching streaming Queue
         # while 1:
             # yield self.socketClient.q.get()

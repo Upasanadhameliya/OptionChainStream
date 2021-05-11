@@ -13,20 +13,33 @@ from optionchain_stream.instrument_file import InstrumentMaster
 from optionchain_stream.implied_vol import implied_volatility
 import datetime
 
+def assign_callBacks(*args):
+    # Assign all the callbacks
+    print("Assigning start")
+    # websocket_obj.kws.on_ticks = websocket_obj.on_ticks
+    # websocket_obj.kws.on_connect = websocket_obj.on_connect
+    # websocket_obj.kws.on_close = websocket_obj.on_close
+    # websocket_obj.kws.on_error = websocket_obj.on_error
+    # websocket_obj.kws.on_noreconnect = websocket_obj.on_noreconnect
+    # websocket_obj.kws.on_reconnect = websocket_obj.on_reconnect
+    # logging.debug("kws.connect()")
+    # websocket_obj.kws.connect()
 
-class WebsocketClient:
-    def __init__(self, api_key, api_secret, access_token, symbol, expiry,instrument_class):
+
+class WebsocketClient(object):
+    def __init__(self, api_key, api_secret, access_token, symbol, expiry):
         # Create kite connect instance
         logging.basicConfig(level=logging.DEBUG)
+        print("ininit!")
         self.kite = KiteConnect(api_key=api_key)
         # self.data = self.kite.generate_session(request_token, api_secret=api_secret)
-        self.kws = KiteTicker(api_key, access_token, debug=True)
+        self.kws = KiteTicker(api_key, access_token, debug=True,reconnect=False)
         self.symbol = symbol
         self.expiry = expiry
         # self.instrumentClass = InstrumentMaster(api_key)
-        self.instrumentClass = instrument_class
-        self.token_list = self.instrumentClass.fetch_contract(self.symbol, str(self.expiry))
-        logging.debug(self.token_list)
+        # self.instrumentClass = instrument_class
+        # self.token_list = self.instrumentClass.fetch_contract(self.symbol, str(self.expiry))
+        # logging.debug(self.token_list)
         self.q = Queue()
         # Set access_token for Quote API call
         self.kite.set_access_token(access_token)
@@ -63,6 +76,9 @@ class WebsocketClient:
                                 'last_price':tick['last_price'], 'volume':tick['volume'], 'change':tick['change'],
                                 'oi':tick['oi'], 'iv':iv}
             # Store each tick to redis with symbol and token as key pair
+            logging.debug(contract_detail['symbol'])
+            logging.debug(tick['instrument_token'])
+            logging.debug(optionData)
             self.instrumentClass.store_option_data(contract_detail['symbol'], tick['instrument_token'], optionData)
 
     def on_connect(self, ws, response):
@@ -95,13 +111,18 @@ class WebsocketClient:
         logging.debug("kws.connect()")
         self.kws.connect()
 
-    def queue_callBacks(self):
+    def new_fun(*args):
+        print("new fun!")
+        print(args)
+
+    def queue_callBacks(self,api_key,api_secret, access_token, symbol, expiry,):
         """
         Wrapper around ticker callbacks with multiprocess Queue
         """
         # Process to keep updating real time tick to DB
-        # Process(target=self.assign_callBacks,).start()
-        self.assign_callBacks()
+        Process(target=self.new_fun,args=(api_key,api_secret, access_token, 
+            symbol, expiry,)).start()
+        # self.assign_callBacks()
         # Delay to let intial instrument DB sync
         # For option chain to fetch value
         # Required only during initial run
