@@ -10,21 +10,26 @@ import json, logging, asyncio, time
 from multiprocessing import Process, Queue
 from kiteconnect import KiteConnect, KiteTicker
 from optionchain_stream.instrument_file import InstrumentMaster
+from optionchain_stream.implied_vol import implied_volatility
+import datetime
 
 
 class WebsocketClient:
-    def __init__(self, api_key, api_secret, request_token, symbol, expiry):
+    def __init__(self, api_key, api_secret, access_token, symbol, expiry,instrument_class):
         # Create kite connect instance
+        logging.basicConfig(level=logging.DEBUG)
         self.kite = KiteConnect(api_key=api_key)
-        self.data = self.kite.generate_session(request_token, api_secret=api_secret)
-        self.kws = KiteTicker(api_key, self.data["access_token"], debug=True)
+        # self.data = self.kite.generate_session(request_token, api_secret=api_secret)
+        self.kws = KiteTicker(api_key, access_token, debug=True)
         self.symbol = symbol
         self.expiry = expiry
-        self.instrumentClass = InstrumentMaster(api_key)
+        # self.instrumentClass = InstrumentMaster(api_key)
+        self.instrumentClass = instrument_class
         self.token_list = self.instrumentClass.fetch_contract(self.symbol, str(self.expiry))
+        logging.debug(self.token_list)
         self.q = Queue()
         # Set access_token for Quote API call
-        self.kite.set_access_token(self.data["access_token"])
+        self.kite.set_access_token(access_token)
 
     def form_option_chain(self, q):
         """
@@ -63,9 +68,11 @@ class WebsocketClient:
     def on_connect(self, ws, response):
         ws.subscribe(self.token_list)
         ws.set_mode(ws.MODE_FULL, self.token_list)
+        logging.debug("on_connect")
 
     def on_close(self, ws, code, reason):
         logging.error("closed connection on close: {} {}".format(code, reason))
+        logging.debug("on_close")
 
     def on_error(self, ws, code, reason):
         logging.error("closed connection on error: {} {}".format(code, reason))
@@ -78,12 +85,14 @@ class WebsocketClient:
     
     def assign_callBacks(self):
         # Assign all the callbacks
+        logging.debug("Assigning start")
         self.kws.on_ticks = self.on_ticks
         self.kws.on_connect = self.on_connect
         self.kws.on_close = self.on_close
         self.kws.on_error = self.on_error
         self.kws.on_noreconnect = self.on_noreconnect
         self.kws.on_reconnect = self.on_reconnect
+        logging.debug("kws.connect()")
         self.kws.connect()
 
     def queue_callBacks(self):
@@ -91,10 +100,11 @@ class WebsocketClient:
         Wrapper around ticker callbacks with multiprocess Queue
         """
         # Process to keep updating real time tick to DB
-        Process(target=self.assign_callBacks,).start()
+        # Process(target=self.assign_callBacks,).start()
+        self.assign_callBacks()
         # Delay to let intial instrument DB sync
         # For option chain to fetch value
         # Required only during initial run
-        time.sleep(2)
+        # time.sleep(2)
         # Process to fetch option chain in real time from Redis
-        Process(target=self.form_option_chain,args=(self.q, )).start()
+        # Process(target=self.form_option_chain,args=(self.q, )).start()
